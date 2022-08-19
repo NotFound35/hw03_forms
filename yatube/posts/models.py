@@ -27,8 +27,8 @@ class Post(models.Model):
                               on_delete=models.SET_NULL
                               )
 
+    class Meta:
+        ordering = ['-pub_date']
+
     def __str__(self):
         return self.text
-
-    class Meta:
-        ordering = ["-pub_date"]

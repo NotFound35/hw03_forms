@@ -14,8 +14,8 @@ POST_COUNT = 10
 
 
 def index(request):
-    posts = Post.objects.all()
-    paginator = Paginator(posts, 10)
+    posts = Post.objects.select_related('author').all()
+    paginator = Paginator(posts, POST_COUNT)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
@@ -27,7 +27,7 @@ def index(request):
 def group_posts(request, slug):
     group = get_object_or_404(Group, slug=slug)
     posts = Post.objects.filter(group=group)
-    page = Paginator(posts, 10)
+    page = Paginator(posts, POST_COUNT)
     page_number = request.GET.get('page')
     page_obj = page.get_page(page_number)
     context = {
@@ -41,11 +41,11 @@ def group_posts(request, slug):
 def profile(request, username):
     template_name = 'posts/profile.html'
     author = get_object_or_404(User, username=username)
-    posts = Post.objects.filter(author_id=author)
-    page = Paginator(posts, 10)
+    posts = Post.objects.filter(author=author)
+    page = Paginator(posts, POST_COUNT)
     page_number = request.GET.get('page')
     page_obj = page.get_page(page_number)
-    post_count = Post.objects.filter(author__username=username).count()
+    post_count = posts.count()
     context = {
         'page_obj': page_obj,
         'post_count': post_count,
@@ -58,13 +58,12 @@ def post_detail(request, post_id):
     template_name = 'posts/post_detail.html'
     post = get_object_or_404(Post, id=post_id)
     username = get_object_or_404(User, id=post.author_id)
-    post_count = Post.objects.filter(author__username=username).count()
-    author = get_object_or_404(User, username=username)
+    post_count = Post.objects.filter(author=username).count()
     context = {
         'post': post,
         'username': username,
         'post_count': post_count,
-        'author': author
+        'author': username
     }
     return render(request, template_name, context)
 
@@ -72,7 +71,7 @@ def post_detail(request, post_id):
 @login_required
 def post_create(request):
     if request.method == 'POST':
-        form = PostForm(request.POST)
+        form = PostForm(request.POST or None)
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
@@ -85,7 +84,6 @@ def post_create(request):
 @login_required
 def post_edit(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    is_edit = True
     if request.method == 'POST':
         form = PostForm(request.POST, instance=post)
         if form.is_valid():
@@ -96,11 +94,10 @@ def post_edit(request, post_id):
             'post': post
         }
         return render(request, 'posts/create_post.html', context)
-    else:
-        form = PostForm(instance=post)
-        context = {
-            'form': form,
-            'post': post,
-            'is_edit': is_edit
-        }
-        return render(request, 'posts/create_post.html', context)
+    form = PostForm(instance=post)
+    context = {
+        'form': form,
+        'post': post,
+        'is_edit': True
+    }
+    return render(request, 'posts/create_post.html', context)
