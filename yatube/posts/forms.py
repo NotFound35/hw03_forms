@@ -1,15 +1,16 @@
 from .models import Post
 from django import forms
-from django.utils.translation import gettext_lazy
 
 
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post
         fields = ('text', 'group')
-        label = {
-            'text': gettext_lazy('Текст поста')
+        labels = {
+            'text': ('Текст поста'),
+            'group': ('Группа')
         }
-        help_text = {
-            'group': gettext_lazy('Группа поста')
+        help_texts = {
+            "text": ('Текст нового поста'),
+            "group": ('Группа, к которой будет относиться пост'),
         }
